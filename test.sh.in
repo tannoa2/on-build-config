@@ -6,7 +6,8 @@ if [ -z "${REPO_NAME}" ]; then
   REPO_NAME=`pushd ${WORKSPACE}/build >/dev/null && git remote show origin -n | grep "Fetch URL:" | sed "s#^.*/\(.*\).git#\1#" && popd > /dev/null`
 fi
 
-REPOS=("on-http" "on-taskgraph" "on-dhcp-proxy" "on-tftp" "on-syslog")
+REPOS=("on-http" "on-taskgraph" "on-dhcp-proxy" "on-tftp" "on-syslog" "ucs-service")
+REPOSC=("on-http" "on-taskgraph" "on-dhcp-proxy" "on-tftp" "on-syslog")
 
 HTTP_STATIC_FILES="${HTTP_STATIC_FILES}"
 TFTP_STATIC_FILES="${TFTP_STATIC_FILES}"
@@ -96,7 +97,7 @@ preparePackages() {
         mkdir -p ${WORKSPACE}/build-deps
         mkdir -p ${WORKSPACE}/build
       fi
-      for i in ${REPOS[@]}; do
+      for i in ${REPOSC[@]}; do
          cd ${WORKSPACE}/build-deps
          if [[ "${REPO_NAME}" != *"${i}"* ]]; then
              git clone https://github.com/RackHD/${i}.git

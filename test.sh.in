@@ -105,6 +105,8 @@ preparePackages() {
              npm install --production
          fi
       done
+      cd ${WORKSPACE}/build-deps/ucs-service
+      pip install -r requirements.txt
 
   # If manifest_file_url is specified, checkout the specified version of rackhd 
   # according to manifest file.

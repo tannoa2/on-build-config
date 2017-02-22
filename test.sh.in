@@ -96,8 +96,7 @@ preparePackages() {
         mkdir -p ${WORKSPACE}/build-deps
         mkdir -p ${WORKSPACE}/build
       fi
-      for i in ${
-      C[@]}; do
+      for i in ${REPOS[@]}; do
          cd ${WORKSPACE}/build-deps
          if [[ "${REPO_NAME}" != *"${i}"* ]]; then
              git clone https://github.com/RackHD/${i}.git

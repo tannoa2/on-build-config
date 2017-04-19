@@ -49,9 +49,9 @@
             "repository": "https://github.com/RackHD/di.js.git"
         }, 
         {
-            "branch": "", 
+            "branch": "redfishAlertTest", 
             "commit-id": "",
-            "repository": "https://github.com/RackHD/RackHD.git"
+            "repository": "https://github.com/tannoa2/RackHD.git"
         }, 
         {
             "branch": "", 

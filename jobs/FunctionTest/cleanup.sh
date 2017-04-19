@@ -45,6 +45,6 @@ nodesDelete() {
     done
   fi
 }
-
+sleep ${SLEEP}
 cleanupVMs
 nodesDelete

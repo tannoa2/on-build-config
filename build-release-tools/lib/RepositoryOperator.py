@@ -1,4 +1,4 @@
-"""
+
 Module to abstract operations to repository
 """
 import os
@@ -541,3 +541,156 @@ class RepoOperator(object):
         if push_code !=0:
             raise RuntimeError('Unable to push changes.\n{0}\n{1}\n{2}'.format(push_code, push_out, push_error))
         return
+     
+
+
+
+    def get_current_submodule(self,repo_dir):
+        """
+        get the current submodule of repository
+        :param repo_dir: the directory of the repository
+        :return: Dictionary of submodule
+        """
+        
+        if repo_dir is None or not os.path.isdir(repo_dir):
+            raise RuntimeError("The repository directory {0} is not specified. or its format is wrong".format(repo_dir))
+
+        return_code, output, error = self.git.run(['submodule'], directory=repo_dir)
+
+        if return_code == 0:
+            submodule_folders = {}
+            submodules = output.strip()
+            if len(submodules) == 0:
+                 return submodule_folders 
+            try:
+                 submodules_list = submodules.split('\n')
+                 print submodules_list
+                 for item in submodules_list :
+                     if len(item)!= 0:
+                         submodule_item_list = item.split()
+                         print submodule_item_list
+                         release_info = {'commit_id':submodule_item_list[0],'release_info':submodule_item_list[2]}
+                         submodule_folders[submodule_item_list[1]] = release_info
+            except KeyError as error:
+                raise RuntimeError("Unable to get the submodule of {0}".format(repo_dir))
+            return submodule_folders
+        else:
+            raise RuntimeError("Unable to get the submodule of {0}".format(repo_dir))
+   
+              
+    def checkout_to_commit(self,repo_dir, commit_id):
+        """
+        check out the submodule to the specifical commid id
+        :param repo_dir: the directory of the repository
+        :param commit_id: the commit id witch repo will be checkout to  
+        :return: None
+        """
+    
+        #repo_dir = repo_dir +"/"+ submodule_name
+        if repo_dir is None or not os.path.isdir(repo_dir):
+            raise RuntimeError("The repository directory {0} is not specified. or its format is wrong".format(repo_dir))
+
+        return_code, output, error = self.git.run(['checkout', commit_id], directory=repo_dir)
+
+        if return_code == 0:
+            return output.strip()
+        else:
+            print error
+            raise RuntimeError("Unable to checkout to new commit of {0}".format(repo_dir))
+
+    def submodule_init(self,repo_dir):
+        """
+        Init submodule of repository 
+        :param repo_dir: the directory of the repository
+        :return: None
+        """
+       
+        if repo_dir is None or not os.path.isdir(repo_dir):
+            raise RuntimeError("The repository directory {0} is not specified. or its format is wrong".format(repo_dir))
+
+        return_code, output, error = self.git.run(['submodule', 'init'], directory=repo_dir)
+        if return_code == 0:
+            return output.strip()
+        else:
+            raise RuntimeError("Unable to init the submodule of {0}".format(repo_dir))
+ 
+    def submodule_update(self, repo_dir):  
+        """
+        update submodule of reposioty
+        :param repo_dir: the directory of the repository
+        :return: None
+        """
+         
+        if repo_dir is None or not os.path.isdir(repo_dir):
+            raise RuntimeError("The repository directory {0} is not specified. or its format is wrong".format(repo_dir))
+
+        return_code, output, error = self.git.run(['submodule', 'update'], directory=repo_dir)
+
+        if return_code == 0:
+            return output.strip()
+        else:
+            raise RuntimeError("Unable to update the submodule of {0}".format(repo_dir))
+    def get_commit_of_update_submodule(self, repo_dir,commit_message):
+        """
+        fetch the commit id of the latest update of submodule
+        :param repo_dir: the directory of the repository
+        :return: the commit id of update submodule
+        """
+        
+        if repo_dir is None or not os.path.isdir(repo_dir):
+            raise RuntimeError("The repository directory {0} is not specified. or its format is wrong".format(repo_dir))
+        return_code, output, error = self.git.run(['log', '--grep='+commit_message , '-n', '1'], directory=repo_dir)
+
+        if return_code == 0:
+            print "output is {0}".format(output)
+            return output.strip()
+        else:
+            print output.strip()
+            print error
+            raise RuntimeError("Unable to update the submodule of {0}".format(repo_dir))
+    def revert_to_commit(self, repo_dir,commit_id):
+        """
+        revert update submodule of reposioty 
+        :param repo_dir: the directory of the repository
+        :param commit_id: the commit id of update submodule
+        :return: None
+        """
+        
+        if repo_dir is None or not os.path.isdir(repo_dir):
+            raise RuntimeError("The repository directory {0} is not specified. or its format is wrong".format(repo_dir))
+
+        return_code, output, error = self.git.run(['revert', commit_id], directory=repo_dir)
+
+        if return_code == 0:
+            return output.strip()
+        else:
+            raise RuntimeError("Unable to update the submodule of {0}".format(repo_dir))
+    def git_pull(self,repo_dir,repo_name,branch_name):
+        """
+        update the reposioty to latest commit and make sure the coming change will push successfully
+        :param repo_dir: the directory of the repository
+        :return: None
+        """
+         
+        if repo_dir is None or not os.path.isdir(repo_dir):
+            raise RuntimeError("The repository directory {0} is not specified. or its format is wrong".format(repo_dir))
+        return_code, output, error = self.git.run(['pull',repo_name, branch_name], directory=repo_dir)
+
+        if return_code == 0:
+            return output.strip()
+        else:
+            raise RuntimeError("Unable to git pull {0},error is {1}".format(repo_dir,error))
+    def git_log(self ,repo_dir):
+        """
+        git log
+        :param repo_dir: the directory of the repository
+        :return: None
+        """
+ 
+        if repo_dir is None or not os.path.isdir(repo_dir):
+            raise RuntimeError("The repository directory {0} is not specified. or its format is wrong".format(repo_dir))
+        return_code, output, error = self.git.run(['log'], directory=repo_dir)
+        if return_code == 0:
+            return output.strip()
+        else:
+            raise RuntimeError("Unable to git log {0},error is {1}".format(repo_dir,error))

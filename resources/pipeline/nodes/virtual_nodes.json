@@ -1,0 +1,10 @@
+{
+    "Rinjin":{
+        "count":2,
+        "ova_path":"/home/jenkins/isofarm/OVA/vRinjin-Haswell.ova"
+    },
+    "Quanta":{
+        "count":1,
+        "ova_path":"/home/jenkins/isofarm/OVA/vQuanta-T41-Haswell.ova"
+    }
+}

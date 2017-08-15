@@ -4,8 +4,7 @@
 #sol log of all vnodes will be generated and published to jenkins at the same time with vagrant.log
 
 #bmc user/password list, "u1:p1 u2:p2 ..."
-#build-config will generate this list through env vars
-bmc_account_list="${BMC_ACCOUNT_LIST}"
+bmc_account_list="$1"
 
 #Generate sol log for all nodes.
 #Use cmd 'arp' to get vnodes' IP and cause don't know nodes' number and when the node get IP by DHCP, 
@@ -15,10 +14,11 @@ vnode_num=0
 timeout=0
 maxto=40
 
-target_folder=${WORKSPACE}/build-log/
-
-if [ ! -z $1 ]; then
-    target_folder=$1
+target_folder=$2
+if [ "$target_folder" == "" ]; then
+     echo "[Error] $0 : Wrong usage. please specific target folder for script."
+     echo "[Usage] $0 \$bmc_account_list \$file_output_folder "
+     exit 1
 fi
 
 while [ ${timeout} != ${maxto} ]; do

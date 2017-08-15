@@ -4,8 +4,8 @@
 #This script runs in virtualbox or any other machines on which vnodes IP can be found through arp.
 #because InfraSIM/vBMC expose the qemu console via VNC port 5901. so we can record VNC via $vBMCIP:5901
 
-#build-config will generate this list through env vars
-bmc_account_list="${BMC_ACCOUNT_LIST}"
+#bmc user/password list, "u1:p1 u2:p2 ..."
+bmc_account_list="$1"
 
 #Generate sol log for all nodes.
 #Use cmd 'arp' to get vnodes' IP and cause don't know nodes' number and when the node get IP by DHCP,
@@ -15,16 +15,17 @@ vnode_num=0
 timeout=0
 maxto=40
 
-save_path=$1
+save_path=$2
 if [ "$save_path" == "" ]; then
      echo "[Error] vnc_record.sh :  Wrong usage. please specific target save path for script."
-     echo "[Usage] vnc_record.sh \$file_output_folder \$file_prefix "
+     echo "[Usage] vnc_record.sh \$bmc_account_list \$file_output_folder \$file_prefix "
      exit 1
 fi
 
-fname_prefix=$2
+fname_prefix=$3
 
-
+virtualenv --clear `pwd`/vnc
+source `pwd`/vnc/bin/activate
 #Install vnc2flv is not installed
 pip install vnc2flv
 FLVREC=flvrec.py
@@ -81,3 +82,5 @@ done
 if [ $vnode_num -eq 0 ]; then
     echo "[Error][VNC-Record] No any node IP found when times up. no flv record available."
 fi
+
+deactivate

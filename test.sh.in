@@ -43,6 +43,7 @@ apiPackageModify() {
 }
 
 VCOMPUTE="${VCOMPUTE}"
+TOTAL_VCOMPUTES=3
 if [ -z "${VCOMPUTE}" ]; then
   VCOMPUTE=("jvm-Quanta_T41-1" "jvm-vRinjin-1" "jvm-vRinjin-2")
 fi
@@ -194,6 +195,33 @@ waitForAPI() {
   fi
 }
 
+waitForNodes() {
+  # Wait for virtual nodes to be discovered, this expects exactly the number of virtual
+  # compute nodes defined by TOTAL_VCOMPUTES at the beginning of this script
+  netstat -ntlp
+  timeout=0
+  maxto=60
+  set +e
+  url=http://localhost:9090/api/2.0/nodes
+  # check if nodeids have been created for the virtual nodes 
+  sleep 20
+  while [ ${timeout} != ${maxto} ]; do
+    echo "Current node list: "
+    wget -SO- -T 1 -t 1 --retry-connrefused --waitretry=1 --read-timeout=20 --timeout=15 --continue ${url} 
+    wget -SO- -T 1 -t 1 --retry-connrefused --waitretry=1 --read-timeout=20 --timeout=15 --continue ${url} | grep -o "compute" | wc -l | grep ${TOTAL_VCOMPUTES}
+    if [ $? = 0 ]; then
+      break
+    fi
+    sleep 10
+    timeout=`expr ${timeout} + 1`
+  done
+  set -e
+  if [ ${timeout} == ${maxto} ]; then
+    echo "Timed out waiting for RackHD virtual node discovery (duration=`expr $maxto \* 10`s)."
+    exit 1
+  fi
+}
+
 ######################################
 #    OVA POST SMOKE TEST RELATED     #
 ######################################
@@ -277,6 +305,7 @@ fitSmokeTest()
     if [ ! -z "$1" ];then
         args+="$1"
     fi
+    waitForNodes
     python run_tests.py -test deploy/rackhd_stack_init.py ${tstack} ${args} -xunit
     if [ $? -ne 0 ]; then
         echo "Test FIT failed running deploy/rackhd_stack_init.py"

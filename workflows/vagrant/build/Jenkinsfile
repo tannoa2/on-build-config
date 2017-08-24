@@ -1,0 +1,23 @@
+@Library('my_library') _
+node{
+    timestamps{
+        stage("build vagrant"){
+            withEnv([
+                "RACKHD_URL=${env.RACKHD_URL}",
+                "RACKHD_COMMIT=${env.RACKHD_COMMIT}",
+                "RACKHD_VERSION=${env.RACKHD_VERSION}",
+                "OS_VER=${env.OS_VER}",
+                "ARTIFACTORY_URL=${env.ARTIFACTORY_URL}",
+                "STAGE_REPO_NAME=${env.STAGE_REPO_NAME}",
+                "DEB_COMPONENT=${env.DEB_COMPONENT}",
+                "DEB_DISTRIBUTION=trusty",
+                "CACHE_PROJECT_NAME=VAGRANT_CACHE_BUILD"
+            ]){
+                def vagrant_builder = new pipeline.rackhd.vagrant.Build()
+                String rackhd_apt_repo = "${ARTIFACTORY_URL}/${STAGE_REPO_NAME} ${DEB_DISTRIBUTION} ${DEB_COMPONENT}"
+                vagrant_builder.buildBox(RACKHD_URL, RACKHD_COMMIT, RACKHD_VERSION, rackhd_apt_repo, OS_VER, CACHE_PROJECT_NAME)
+            }
+        }
+    }
+}
+

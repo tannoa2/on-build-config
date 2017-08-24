@@ -112,3 +112,16 @@ def sendResultToMysql(boolean sendJenkinsBuildResults, boolean sendTestResults){
     }
 }
 
+def unstashFile(Map stash_dict, String target_dir){
+    String stash_name = stash_dict["stash_name"]
+    String stash_path = stash_dict["stash_path"]
+    dir(target_dir){
+        unstash "$stash_name"
+
+     }
+    file_path = target_dir + File.separator + stash_path
+    return file_path
+}
+
+
+

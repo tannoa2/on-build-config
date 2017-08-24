@@ -1,0 +1,82 @@
+- hosts: ova-post-test
+
+  tasks:
+    - name: Enable external network through gateway
+      become: yes
+      shell: |
+        ip route add default via {{ ova_gateway }} dev {{ ova_net_interface }}
+      tags:
+        - config-gateway
+      ignore_errors: yes
+      register: gateway
+
+    - name: Enable external network through gateway
+      become: yes
+      shell: |
+        ip route change default via {{ ova_gateway }} dev {{ ova_net_interface }}
+      tags:
+        - config-gateway
+      when: gateway.rc != 0
+
+    - name: Add DNS Server IP if it's specified in Jenkins build param
+      become: yes
+      shell: bash -c " echo \"nameserver {{ dns_server_ip }}\" >> /etc/resolv.conf  "
+      tags:
+        - config-gateway
+      when: dns_server_ip != ""
+
+    - name: Sync ova time
+      become: yes
+      shell: |
+         timedatectl set-timezone America/New_York
+         ntpdate {{ ova_gateway }}
+      tags:
+        - before-test
+
+
+
+    - name: Copy rackhd config for test
+      become: yes
+      copy:
+        src: config.json
+        dest: /opt/monorail/config.json
+      tags:
+        - before-test
+
+    - name: Clean rackhd log
+      become: yes
+      shell: |
+        rm /var/log/rackhd/*
+      tags:
+        - before-test
+
+    - name: Clean mongodb
+      shell: |
+        echo "db.dropDatabase()" | mongo pxe
+      tags:
+        - before-test
+
+    - name: Restart rackhd
+      become: yes
+      service:
+        name: rackhd
+        state: restarted
+      tags:
+        - before-test
+
+#######################
+
+    - name: Gather rackhd log
+      become: yes
+      fetch:
+        src: /var/log/rackhd/{{item}}.log
+        dest: ./
+        flat: yes
+      with_items:
+        - on-http
+        - on-tftp
+        - on-taskgraph
+        - on-dhcp-proxy
+        - on-syslog
+      tags:
+        - after-test

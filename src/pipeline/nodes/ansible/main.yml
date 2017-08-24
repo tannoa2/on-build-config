@@ -1,0 +1,85 @@
+
+- hosts: ova-post-test
+
+  tasks:
+    - name: Create lib directory
+      become: yes
+      file: path="{{ library_dir }}/deployment" state=directory
+      tags: ['start', 'stop']
+
+    - name: Copy vnode log generating script
+      become: yes
+      copy:
+        src: "{{ library_dir }}/deployment/fetch_vnodes_log.sh"
+        dest: "{{ library_dir }}/deployment/fetch_vnodes_log.sh"
+        mode: 0755
+      tags: ['start', 'stop']
+
+    - name: Copy SOL generating script
+      become: yes
+      copy:
+        src: "{{ library_dir }}/deployment/generate_sol_log.sh"
+        dest: "{{ library_dir }}/deployment/generate_sol_log.sh"
+        mode: 0755
+      tags: ['start', 'stop']
+
+    - name: Copy VNC recording script
+      become: yes
+      copy:
+        src: "{{ library_dir }}/deployment/vnc_record.sh"
+        dest: "{{ library_dir }}/deployment/vnc_record.sh"
+        mode: 0755
+      tags: ['start', 'stop']
+
+    - name: Start vnode Log collecting
+      become: yes
+      shell: |
+        cd "{{ library_dir }}"/deployment
+        ./fetch_vnodes_log.sh start --NOHUP true --LOG_DIR "{{ target_dir }}" --BMC_ACCOUNT_LIST "{{ BMC_CRED }}" --ON_BUILD_CONFIG_DIR "{{ library_dir }}" --BUILD_ID "{{ lookup('env','BUILD_ID') }}"
+      tags:
+        - start
+
+#######################
+
+    - name: Install ansi2html
+      become: yes
+      pip:
+        name: ansi2html
+
+    - name: Stop vnode Log collecting
+      become: yes
+      shell: |
+        cd {{ library_dir }}/deployment
+        ./fetch_vnodes_log.sh stop --LOG_DIR {{ target_dir }}
+      tags:
+        - stop
+
+    - name: List remote sol.log files
+      command: "/bin/sh -c 'ls {{ target_dir }}/*sol.log'"
+      register: sol_logs
+      ignore_errors: yes
+      tags:
+        - stop
+
+
+    - name: List remote flv files
+      command: "/bin/sh -c 'ls {{ target_dir }}/*.flv'"
+      register: flvfiles
+      ignore_errors: yes
+      tags:
+        - stop
+
+    - name: Gather SOL and VNC log
+      become: yes
+      fetch:
+          src: "{{ item }}"
+          dest: "{{ target_dir }}"
+          flat: yes
+      with_items:
+        - "{{ target_dir }}/sol_script.log"
+        - "{{ target_dir }}/vnc_record.log"
+        - "{{ flvfiles.stdout_lines }}"
+        - "{{ sol_logs.stdout_lines }}"
+      ignore_errors: yes
+      tags:
+        - stop

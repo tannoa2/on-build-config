@@ -33,6 +33,7 @@ def runTest(String stack_type, String test_name, ArrayList<String> used_resource
             node_name = share_method.occupyAvailableLockedResource(label_name, used_resources)
             node(node_name){
                 deleteDir()
+                def err = null
                 def manifest = new pipeline.common.Manifest()
                 def fit = new pipeline.fit.FIT()
                 def virtual_node = new pipeline.nodes.VirtualNode()
@@ -58,8 +59,8 @@ def runTest(String stack_type, String test_name, ArrayList<String> used_resource
                         fit.run(rackhd_dir, fit_configure)
                     }
                 } catch(error){
+                    err = error
                     keepEnv(library_dir, keep_docker_on_failure, keep_env_on_failure, keep_minutes, test_target, test_name)
-                    error("[ERROR] Failed to run test $test_name against $test_target with error: $error")
                 } finally{
                     // archive logs
                     rackhd_deployer.archiveLogsToTarget(library_dir, target_dir)
@@ -70,6 +71,9 @@ def runTest(String stack_type, String test_name, ArrayList<String> used_resource
                     ignore_failure = true
                     rackhd_deployer.cleanUp(library_dir, ignore_failure)
                     virtual_node.cleanUp(library_dir, ignore_failure)
+                    if(err){
+                        throw err
+                    }
                 }
             }
         }

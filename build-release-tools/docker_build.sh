@@ -84,7 +84,7 @@ doBuild() {
                     repos_tags="rackhd/files"$TAG" "
             elif [ "$repo" != "on-core" ];then
                     #Based on newly build upstream image to build
-                    sed -i "/^FROM/ s/:devel/${PRE_TAG}/" Dockerfile
+                    sed -i "/^FROM/ s/:\${tag}/${PRE_TAG}/" Dockerfile
                     docker build -t rackhd/$repo$TAG .
             fi
             case $repo in

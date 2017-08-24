@@ -10,7 +10,7 @@ ipmitool_version: "{{ lookup('env','SLAVE_IPMITOOL_VERSION') | default('1.8.13-1
 slave_ansible_version: "{{ lookup('env','SLAVE_ANSIBLE_VERSION') | default('2.3.0.0') }}"
 pip_version: "{{ lookup('env','SLAVE_PIP_VERSION') | default(9.0.1) }}"
 virtualenv_version: "{{ lookup('env','SLAVE_VIRTUALENV_VERSION') | default('14.0.0') }}"
-docker_version: "{{ lookup('env','SLAVE_DOCKER_VERSION') | default('17.03.1-ce') }}"
+docker_version: "{{ lookup('env','SLAVE_DOCKER_VERSION') | default('17.06.1-ce') }}"
 ntp_server: "{{ lookup('env','NTP_SERVER') | default('ntp.ubuntu.com') }}"
 
 #Jenkins Master IP

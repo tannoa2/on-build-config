@@ -5,7 +5,7 @@ import java.io.File;
     // it will output a manifest file({branch}-{day}), according to a template manifest (under build-release-tools/lib). and clone code to $target_dir
     //
     // Inputs:
-    // 1. implicit     : template manifest file under build-release-tools/lib
+    // 1. implicit     : template manifest file under build-release-tools/lib/manifest.json
     // 2. target_dir   : the dir which the code will be cloned to( clone will happen inside this function, so all thing dir will be deleted at the begining! ) , so that we can fetch the lastest commit from them
     // 3. on_build_config_dir: where on-build-config repo being cloned to ( should be prepared before using this function), so that the python scripts can be invoked
     // 4. branch       : from which branch to generate the manifest file
@@ -16,8 +16,9 @@ import java.io.File;
     // 1. a manifest file generated in current dir
     // 2. return this manifest file name
     //======================================================================
-    def generateManifest( String target_dir , String on_build_config_dir, String branch="master", String date="current", String timezone="+0800" ){
+    def generateManifestFromGithub( String target_dir , String on_build_config_dir, String branch="master", String date="current", String timezone="+0800" ){
 
+         // if branch/date/timezone input given for generate_manifest.py, it will clone then fetch latest commit based on manifest template
          sh """#!/bin/bash -ex
             ${on_build_config_dir}/build-release-tools/HWIMO-BUILD ${on_build_config_dir}/build-release-tools/application/generate_manifest.py \
             --branch $branch \
@@ -43,6 +44,100 @@ import java.io.File;
          }
          return fpath;
     }
+
+    //================================================================
+    // it will output a manifest file according to the content of repos under local folder $src_dir
+    //
+    // Inputs:
+    // 1. src_dir  : the dir under which  on-xxx repo folders are located
+    // 2. dest_manifest : the path/filename for the output manifest file
+    // 2. on_build_config_dir: where on-build-config repo being cloned to ( should be prepared before using this function), so that the python scripts can be invoked
+    //
+    // Output:
+    // 1. a manifest file with the path/name as input $dest_manifest
+    // 2. return this manifest file name
+    //======================================================================
+    def generateManifestFromLocalRepos( String src_dir , String dest_manifest, String on_build_config_dir ){
+
+         // if either of branch/date/timezone input is blank, generate_manifest.py will seek from builddir instead 
+         sh """#!/bin/bash -ex
+            ${on_build_config_dir}/build-release-tools/HWIMO-BUILD ${on_build_config_dir}/build-release-tools/application/generate_manifest.py \
+            --builddir $src_dir \
+            --dest-manifest $dest_manifest \
+            --force \
+            --jobs 8
+            """
+         return dest_manifest;
+    }
+
+
+    //================================================================
+    // it will output a manifest file according to the content of repos under local folder $src_dir
+    //
+    // Inputs:
+    // 1. pr_url   : typically , you can use $ghprbPullLink ( provided by GHPRB plugin)
+    // 2. pr_branch: typically , you can use $ghprbTargetBranch ( provided by GHPRB plugin)
+    // 3. 
+    // Output:
+    // 1. a manifest file with the path/name as input $dest_manifest
+    // 2. return this manifest file name
+    //======================================================================
+    def generateManifestFromPR( String pr_url, String pr_branch, String dest_manifest, String on_build_config_dir , String github_token_pool_id ){
+
+        withCredentials([string(credentialsId: github_token_pool_id ,
+                                     variable: 'PULLER_GITHUB_TOKEN_POOL')]) {
+            sh """#!/bin/bash -ex
+            ${on_build_config_dir}/build-release-tools/HWIMO-BUILD  ${on_build_config_dir}/build-release-tools/application/pr_parser.py \
+            --change-url $pr_url \
+            --target-branch $pr_branch \
+            --puller-ghtoken-pool "${PULLER_GITHUB_TOKEN_POOL}" \
+            --manifest-file-path "$dest_manifest"
+            """
+        }
+        return dest_manifest;
+    }
+
+
+
+
+
+    //================================================================
+    // This is useful in Unit-Test , it will parse the manifest file(generated from PR Gate), to find out the repos list which need to do unit-test
+    // example: for a on-core PR, there will be a under-test flag for on-core repo in manifest file.
+    //          So this function will return all other on-xxx which need to run unit-test or rebuild, because they all depends on on-core.
+    //
+    // Inputs:
+    // 1. manifest_path  : the path/filename to the manifest file
+    // 2. on_build_config_dir: where on-build-config repo being cloned to ( should be prepared before using this function), so that the python scripts can be invoked
+    //
+    // Output:
+    // a String contains all repos need to be tested (delimiter as ",")
+    //======================================================================
+   def getReposNeedTest( String manifest_path, String on_build_config_dir ){
+
+        // Parse manifest to get the repositories which should run unit test
+        // For a PR of on-core, 
+        // the test_repos=["on-core", "on-tasks", "on-http", "on-taskgraph", "on-dhcp-proxy", "on-tftp", "on-syslog"]
+        // For an independent PR of on-http
+        // the test_repos=["on-http"]
+
+        String downstream_file = sh ( script: "mktemp", returnStdout: true ).trim();
+
+        sh """#!/bin/bash -e
+           ${on_build_config_dir}/build-release-tools/HWIMO-BUILD ${on_build_config_dir}/build-release-tools/application/parse_manifest.py \
+           --manifest-file ${manifest_path} \
+           --parameters-file ${downstream_file}
+           """
+
+        repos_need_unit_test=sh( script: """#!/bin/bash -e     
+                                         cat   ${downstream_file}  | grep REPOS_NEED_UNIT_TEST | awk -F '=' {'print \$2'}
+                                         """,
+                                 returnStdout: true     ).trim()
+
+        sh "rm -f $downstream_file"
+        def test_repos = repos_need_unit_test.tokenize(',')
+        return test_repos
+   }
 
     //==============================================================
     // publish a manifest file to Bintray
@@ -203,17 +298,27 @@ import java.io.File;
     }
 
 
-
-
 // Unit Test as below , also can be an example //
 /*
 node {
         
         __on_build_config_dir="/tmp/x/on-build-config"
-        sh "pushd $__on_build_config_dir/../  && git clone https://github.com/rackhd/on-build-config.git  && popd"
         _src_dir            ="/tmp/x/src"
 
-        fname = generateManifest( _src_dir ,__on_build_config_dir )
+        sh "pushd $__on_build_config_dir/../  && git clone https://github.com/rackhd/on-build-config.git  && popd"
+
+
+        generateManifestFromLocalRepos( src_dir , "/tmp/x/new_manifest_from_local", on_build_config_dir  )
+
+        PR="https://github.com/RackHD/on-core/pull/297"
+        generateManifestFromPR( PR, "master", "/tmp/x/new_manifest_from_pr", on_build_config_dir, "PULLER_GITHUB_TOKEN_POOL")
+
+        list= getReposNeedTest("/tmp/x/new_manifest_from_pr", on_build_config_dir )
+        echo "LIST = $list"
+
+
+
+        fname = generateManifestFromGithub( _src_dir ,__on_build_config_dir )
         echo "$fname has been generated "
 
         publishManifest( fname, __on_build_config_dir )

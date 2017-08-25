@@ -40,7 +40,7 @@ nodesDelete() {
 
 nodesCreate() {
     pushd ${ON_BUILD_CONFIG_DIR}/deployment/
-    execWithTimeout "${ON_BUILD_CONFIG_DIR}" "ovftool --noSSLVerify --diskMode=${DISKMODE} --datastore=${DATASTORE}  --name='${VNODE_NAME}' --net:'${NIC_NAME}=${SWITCH_NAME}' '${OVA_PATH}' vi://${ESXI_USER}:${ESXI_PASS}@${ESXI_HOST}"
+    execWithTimeout "ovftool --noSSLVerify --diskMode=${DISKMODE} --datastore=${DATASTORE}  --name='${VNODE_NAME}' --net:'${NIC_NAME}=${SWITCH_NAME}' '${OVA_PATH}' vi://${ESXI_USER}:${ESXI_PASS}@${ESXI_HOST}"
     popd
 }
 

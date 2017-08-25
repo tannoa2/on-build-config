@@ -9,7 +9,7 @@ Usage(){
     echo "      -n, --DOCKER_NAME: The name of the target docker container"
     echo "      -t, --DOCKER_TAG: The tag of the image"
     echo "      -r, --TARGET_DOCKER_REPO: The target repository on docker hub"
-    echo "      -o, --TARGET_OUTPUT_DIR: The directory of log files"
+    echo "      -l, --LOG_OUTPUT_DIR: The directory of log files"
 }
 
 saveDocker(){
@@ -18,9 +18,9 @@ saveDocker(){
     echo $SUDO_PASSWORD |sudo -S docker commit $containerId my/temp
     echo $SUDO_PASSWORD |sudo -S docker tag my/temp $TARGET_DOCKER_REPO/$DOCKER_TAG
     echo $SUDO_PASSWORD |sudo -S docker push $TARGET_DOCKER_REPO/$DOCKER_TAG
-    echo "Please run below command to run the docker locally:" > ${TARGET_OUTPUT_DIR}/docker_tag.log
-    echo "sudo docker run --net=host -d -t rackhdci/${DOCKER_TAG}" >> ${TARGET_OUTPUT_DIR}/docker_tag.log
-    echo "PS: the docker require a NIC with ip 172.31.128.250" >> ${TARGET_OUTPUT_DIR}/docker_tag.log
+    echo "Please run below command to run the docker locally:" > ${LOG_OUTPUT_DIR}/docker_tag.log
+    echo "sudo docker run --net=host -d -t rackhdci/${DOCKER_TAG}" >> ${LOG_OUTPUT_DIR}/docker_tag.log
+    echo "PS: the docker require a NIC with ip 172.31.128.250" >> ${LOG_OUTPUT_DIR}/docker_tag.log
 }
 ###################################################################
 #
@@ -48,8 +48,8 @@ parseArguments(){
             -r | --TARGET_DOCKER_REPO )     shift
                                             TARGET_DOCKER_REPO=$1
                                             ;;
-            -o | --TARGET_OUTPUT_DIR )      shift
-                                            TARGET_OUTPUT_DIR=$1
+            -o | --LOG_OUTPUT_DIR )         shift
+                                            LOG_OUTPUT_DIR=$1
                                             ;;
             * )                             Usage
                                             exit 1
@@ -93,12 +93,12 @@ parseArguments(){
         exit 1
     fi
 
-    if [ ! -n "${TARGET_OUTPUT_DIR}" ]; then
-        echo "[Error]Arguments -o | --TARGET_OUTPUT_DIR is required"
+    if [ ! -n "${LOG_OUTPUT_DIR}" ]; then
+        echo "[Error]Arguments -o | --LOG_OUTPUT_DIR is required"
         Usage
         exit 1
     fi
-    mkdir -p $TARGET_OUTPUT_DIR
+    mkdir -p $LOG_OUTPUT_DIR
 }
 
 

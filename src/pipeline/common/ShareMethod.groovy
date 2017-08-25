@@ -60,6 +60,8 @@ def occupyAvailableLockedResource(String label_name, ArrayList<String> used_reso
 }
 
 def parseJsonResource(String resource_path){
+    //Parse json file under resources directory to a dictionary
+    //And return the dictionary
     def json_text = libraryResource(resource_path)
     def props = readJSON text: json_text
     return props

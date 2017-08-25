@@ -1,6 +1,13 @@
 {
     "virtual_stack":{
         "source_code":{
+            "INIT":{
+                "GROUP":"-test deploy/rackhd_stack_init.py",
+                "STACK":"docker_local_run",
+                "LOG_LEVEL":4,
+                "EXTRA_OPTIONS":"--sm-amqp-use-user guest",
+                "LABEL":""
+            },
             "FIT":{
                 "GROUP":"-test tests -group smoke",
                 "STACK":"docker_local_run",

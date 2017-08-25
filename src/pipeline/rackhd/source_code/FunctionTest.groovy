@@ -25,7 +25,9 @@ def runTest(String stack_type, String test_name, ArrayList<String> used_resource
     def share_method = new pipeline.common.ShareMethod()
     String test_target = "source_code"
     def fit_configure = new pipeline.fit.FitConfigure(stack_type, test_target, test_name)
+    def fit_init_configure = new pipeline.fit.FitConfigure(stack_type, test_target, "INIT")
     fit_configure.configure()
+    fit_init_configure.configure()
     String node_name = ""
     String label_name = fit_configure.getLabel()
     try{
@@ -56,11 +58,14 @@ def runTest(String stack_type, String test_name, ArrayList<String> used_resource
                         virtual_node.deploy(library_dir)
                         virtual_node.startFetchLogs(library_dir, target_dir)
                         // run FIT test
+                        fit.configControlInterfaceIp(rackhd_dir)
+                        fit.run(rackhd_dir, fit_init_configure)
                         fit.run(rackhd_dir, fit_configure)
                     }
                 } catch(error){
                     err = error
                     keepEnv(library_dir, keep_docker_on_failure, keep_env_on_failure, keep_minutes, test_target, test_name)
+                    error("[ERROR] Failed to run test $test_name against $test_target with error: $error")
                 } finally{
                     // archive logs
                     rackhd_deployer.archiveLogsToTarget(library_dir, target_dir)
@@ -74,6 +79,7 @@ def runTest(String stack_type, String test_name, ArrayList<String> used_resource
                     if(err){
                         throw err
                     }
+
                 }
             }
         }

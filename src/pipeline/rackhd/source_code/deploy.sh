@@ -359,6 +359,7 @@ exportLogs(){
     mkdir -p ${LOG_DIR}
     containerId=$( docker ps|grep "${RACKHD_DOCKER_NAME}" | awk '{print $1}' )
     echo $SUDO_PASSWORD |sudo -S docker cp $containerId:/var/log/rackhd.log ${LOG_DIR}
+    echo $SUDO_PASSWORD |sudo -S docker cp $containerId:/var/log/mongodb/mongodb.log ${LOG_DIR}
     echo $SUDO_PASSWORD |sudo -S chown -R $USER:$USER ${LOG_DIR}
     set -e
 }

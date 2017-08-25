@@ -1,5 +1,21 @@
 package pipeline.fit
 
+def configControlInterfaceIp(String rackhd_dir){
+    dir(rackhd_dir){
+        sh '''#!/bin/bash -ex
+        echo 'SetupTestsConfig ...replace the 172.31.128.1 IP in test configs with actual DHCP port IP'
+        RACKHD_DHCP_HOST_IP=$(ifconfig | awk '/inet addr/{print substr($2,6)}' |grep -m1 172.31.128)
+        if [ "$RACKHD_DHCP_HOST_IP" == "" ]; then
+             echo "[Error] There should be a NIC with 172.31.128.xxx IP in your OS."
+             exit -2
+        fi
+        pushd test
+        find ./ -type f -exec sed -i -e "s/172.31.128.1/172.31.128.250/g" {} +
+        popd
+        '''
+    }
+}
+
 def run(String rackhd_dir, Object fit_configure){
     withCredentials([
         usernamePassword(credentialsId: 'ff7ab8d2-e678-41ef-a46b-dd0e780030e1',
@@ -13,7 +29,6 @@ def run(String rackhd_dir, Object fit_configure){
         try{
             sh """#!/bin/bash -ex
             pushd $rackhd_dir/test
-            ./runFIT.sh -p $SUDO_PASSWORD -g "-test deploy/rackhd_stack_init.py" -s "$stack" -v $log_level -e "$extra_options"
             ./runFIT.sh -p $SUDO_PASSWORD -g "$group" -s "$stack" -v $log_level -e "$extra_options" -w $WORKSPACE
             popd
             """

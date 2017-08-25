@@ -24,6 +24,7 @@ node{
             deleteDir()
             checkout scm
             def shareMethod = load("jobs/ShareMethod.groovy")
+            def submodule = load("jobs/SprintRelease/update_submodule.groovy")
             try{
                 stage("Check JIRA"){
                     load("jobs/SprintRelease/check_jira.groovy")
@@ -42,6 +43,8 @@ node{
                 if(JUMP_VERSION == "true"){
                     load("jobs/SprintRelease/bump_version.groovy")
                 }
+                
+                  submodule.submodule("update");
 
                 def manifest_name=env.MANIFEST_FILE_URL.tokenize('/')[-1]
                 currentBuild.description = "<a href=${env.MANIFEST_FILE_URL}>${manifest_name}</a>"
@@ -68,7 +71,14 @@ node{
                         // Run function test
                         source_based_test.runTests(function_test)
                     }
-                } finally{
+                }catch(Exception e){
+
+                     submodule.submodule("revert");  
+                     error("there are failed test cases") 
+
+                 } 
+                 
+                 finally{
                     unit_test.archiveArtifactsToTarget("UnitTest")
                     source_based_test.archiveArtifacts(function_test)
                 }

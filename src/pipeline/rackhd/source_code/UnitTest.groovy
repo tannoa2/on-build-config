@@ -56,7 +56,7 @@ def runTest(String repo_name, Map manifest_dict, ArrayList<String> used_resource
                 share_method.checkoutOnBuildConfig(library_dir)
                 String manifest_path = manifest.unstashManifest(manifest_dict, "$WORKSPACE")
                 String repo_dir = "$WORKSPACE/$repo_name"
-                manifest.checkoutTargetRepo(library_dir, manifest_path, repo_name, repo_dir)
+                manifest.checkoutTargetRepo( manifest_path, repo_name, repo_dir, library_dir)
                 if(with_sudo){
                     testWithSudo(repo_name, repo_dir)
                 } else {

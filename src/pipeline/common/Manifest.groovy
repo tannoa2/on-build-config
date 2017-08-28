@@ -257,11 +257,11 @@ import java.io.File;
 
     // ===================================================================
     // clone git repos and checkout branch accroding to manifest file
-    // typically, target_dir= ${WORKSPACE}/build-deps
+    // example, when target_dir= ${WORKSPACE}/build-deps,  then after clone operation, there will be  ${WORKSPACE}/build-deps/on-http,  ${WORKSPACE}/build-deps/on-core ...
     //
     // Inputs:
-    //  manifest_path: the manifest file's path
-    //  target_dir :   where the codes being clonded to( Warning! All content under this folder will be deleted before clone!)
+    //  manifest_path: the manifest file's path (/path/file)
+    //  target_dir :   the top folder where the codes being clonded to( Warning! All content under this folder will be deleted before clone!)
     //  on_build_config_dir:  where on-build-config repo being cloned to ( should be prepared before using this function)
     //
     // Output:   N/A
@@ -269,7 +269,7 @@ import java.io.File;
     def checkoutAccordingToManifest(String manifest_path, String target_dir, String on_build_config_dir)
     {
         
-        sh """#!/bin/bash -ex
+        sh """#!/bin/bash -e
         pushd $on_build_config_dir
         ./build-release-tools/HWIMO-BUILD ./build-release-tools/application/reprove.py \
         --manifest ${manifest_path} \
@@ -283,21 +283,35 @@ import java.io.File;
         
     }
     // ===================================================================
-    // checkout according to manifest, and return a specific repo's path
+    // checkout one repo according to manifest, and return a specific repo's path
     //
     // Inputs:
-    //  manifest_path : the manifest file's path
-    //  target_dir    : where the codes being clonded to
+    //  manifest_path : the manifest file's path ( like /path/file ), it specific the repo's URL/branch/commit.
+    //  repo_name     : specific desired repo's name. so this function will only download this repo's src code according to manifest.
+    //  target_dir    : where the codes being clonded to, example, if given as /tmp/x/on-http-2, and if repo_name = on-http, then on-http src code will be cloned into /tmp/x/on-http-2, like as doing "git clone http://github.com/rackhd/on-http /tmp/x/on-http-2"
     //  on_build_config_dir:  where on-build-config repo being cloned to ( should be prepared before using this function)
-    //  repo_name     : if specific desired repo's name. its path will be returned in this function.
     //
-    // Output:
-    //  the specific repo's path
     // ===================================================================
-    def checkoutTargetRepo(String manifest_path, String target_dir, String on_build_config_dir, String repo_name ){
-        checkoutAccordingToManifest( manifest_path,  target_dir, on_build_config_dir  )
-        String repo_dir =   target_dir + File.separator + repo_name
-        return repo_dir
+    def checkoutTargetRepo(String manifest_path, String repo_name, String target_repo_dir, String on_build_config_dir ){
+
+        String download_tmp_dir = sh ( script: "mktemp -d", returnStdout: true ).trim();
+
+        //clone everything in manifest into a tmp foler (due to to limiation of reprove.py , it can only download all repos at a time for now..)
+        checkoutAccordingToManifest( manifest_path,  download_tmp_dir, on_build_config_dir  )
+
+        sh """#!/bin/bash -e
+           mkdir -p $target_repo_dir
+
+           if [ ! -d "$download_tmp_dir/$repo_name" ];then
+               echo "[Error] Bad Parameter of repo_name = $repo_name of checkoutTargetRepo() , there's no repo $repo_name being cloned !"
+               exit -1
+           fi
+
+           mv $download_tmp_dir/$repo_name/* $target_repo_dir
+
+           rm -rf $download_tmp_dir #remove the tmp folder
+
+        """
     }
 
 

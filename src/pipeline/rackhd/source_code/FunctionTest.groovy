@@ -44,7 +44,7 @@ def runTest(String stack_type, String test_name, ArrayList<String> used_resource
                 String library_dir = "$WORKSPACE/on-build-config"
                 String rackhd_dir = "$WORKSPACE/RackHD"
                 share_method.checkoutOnBuildConfig(library_dir)
-                manifest.checkoutTargetRepo(library_dir, manifest_path, "RackHD", rackhd_dir)
+                manifest.checkoutTargetRepo( manifest_path, "RackHD", rackhd_dir, library_dir)
                 boolean ignore_failure = false
                 String target_dir = test_target + "/" + test_name + "[$NODE_NAME]"
                 try{

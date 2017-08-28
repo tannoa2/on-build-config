@@ -24,6 +24,13 @@
             }
         },
         "ova":{
+            "INIT":{
+                "GROUP":"-test deploy/rackhd_stack_init.py",
+                "STACK":"ova",
+                "LOG_LEVEL":4,
+                "EXTRA_OPTIONS":"",
+                "LABEL":""
+            },
             "FIT":{
                 "GROUP":"-test tests -group smoke",
                 "STACK":"ova",

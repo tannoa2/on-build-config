@@ -201,7 +201,7 @@ import java.io.File;
     //
     // Inputs: 
     // stash_name   : the "key" of the locker
-    // manifest_path: where the manifest file is located
+    // manifest_path: where the manifest file is located (path/file)
     //
     // Output:
     // a Groovy Map, in which the "stash_name" is the key, and "stash_path" is the path (useful to find the files after unstash)
@@ -221,7 +221,10 @@ import java.io.File;
              // here, WORKSPACE is a build-in variable in Jenkins runtime
              // *******************
              // and we will have to make it flat
-             sh "cp $manifest_path $WORKSPACE"
+             sh """#!/bin/bash -e
+                msg="[Warning]copy from $manifest_path to $WORKSPACE failed.maybe copy destination and source are the same, if so, please ignore the copy error message. "
+                cp $manifest_path $WORKSPACE || echo \$msg
+                """
              file_path = sh ( script: "echo \$(basename $manifest_path)",  returnStdout: true ).trim()
         }
         stash name: stash_name, includes: file_path

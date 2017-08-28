@@ -22,10 +22,6 @@ if   ! check_empty_variable "STAGE_REPO_NAME" ||  ! check_empty_variable "DEB_DI
 fi
 
 
-pushd $WORKSPACE/build/packer/ansible/roles/rackhd-builds/tasks
-sed -i "s#https://dl.bintray.com/rackhd/debian trusty release#${ARTIFACTORY_URL}/${STAGE_REPO_NAME} ${DEB_DISTRIBUTION} ${DEB_COMPONENT}#" main.yml
-sed -i "s#https://dl.bintray.com/rackhd/debian trusty main#${ARTIFACTORY_URL}/${STAGE_REPO_NAME} ${DEB_DISTRIBUTION} ${DEB_COMPONENT}#" main.yml
-popd
 
 echo "kill previous running packer instances"
 
@@ -39,11 +35,10 @@ echo "Start to packer build .."
 
 export PACKER_CACHE_DIR=$HOME/.packer_cache
 #export vars to build ova
-if [ "${IS_OFFICIAL_RELEASE}" == true ]; then
-    export ANSIBLE_PLAYBOOK=rackhd_release
-else
-    export ANSIBLE_PLAYBOOK=rackhd_ci_builds
-fi
+
+export ANSIBLE_PLAYBOOK=rackhd_package #build image from deb package
+# Using Artifactory as the debian repository instead of Bintray
+export DEBIAN_REPOSITORY="deb ${ARTIFACTORY_URL}/${STAGE_REPO_NAME} ${DEB_DISTRIBUTION} ${DEB_COMPONENT}"
 
 if [ "$BUILD_TYPE" == "vmware" ] &&  [ -f output-vmware-iso/*.vmx ]; then
      echo "Build from template cache"
@@ -54,6 +49,7 @@ else
 fi
 
 export RACKHD_VERSION=$RACKHD_VERSION
+
 #export end
 
 ./HWIMO-BUILD

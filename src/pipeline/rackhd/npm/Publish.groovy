@@ -18,6 +18,7 @@ package pipeline.rackhd.npm
 /
 //  node
 //    {
+//        deleteDir()
 //        def manifest_file="https://dl.bintray.com/rackhd/binary/master-20170827"
 //        def is_offical_release=false;
 //
@@ -27,13 +28,15 @@ package pipeline.rackhd.npm
 //                passwordVariable: 'NPM_TOKEN', 
 //                usernameVariable: 'NPM_REGISTRY')])
 //        {
-//              npm_publisher.publish(manifest_file, is_offical_release, NPM_TOKEN, NPM_REGISTRY, "$WORKSPACE/on-build-config", "/tmp/clone_dir" )
+//              retry(3)   // publish to cloud tend to fail in corp network. so adding retry is more reliable.
+//              {
+//                   npm_publisher.publish(manifest_file, is_offical_release, NPM_TOKEN, NPM_REGISTRY, "$WORKSPACE/on-build-config", "/tmp/clone_dir" )
+//              }
 //        }
 //    }
 //=============================================================================================
 def publish(String manifest_file, Boolean is_offical_release, String  npm_registry , String npm_registry_token , String on_build_config_dir = "$WORKSPACE/on-build-config", String clone_dest_dir="" )
 {
-    deleteDir()
 
     if( false == fileExists("$on_build_config_dir/README.md")  )
     {
@@ -46,7 +49,7 @@ def publish(String manifest_file, Boolean is_offical_release, String  npm_regist
     sh """#!/bin/bash -e
 
         # ------- 1 ------------
-        # Pass in the Groovy Variables
+        # Pass in the Groovy Variables, and using only shell variable in latter steps
         manifest_param=$manifest_file
         is_offical_release_param=$is_offical_release
         npm_registry_param=$npm_registry

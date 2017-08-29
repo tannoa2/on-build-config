@@ -21,7 +21,7 @@ def keepEnv(String library_dir, boolean keep_docker, boolean keep_env, int keep_
     }
 }
 
-def runTest(String stack_type, String test_name, ArrayList<String> used_resources, Map manifest_dict, boolean keep_docker_on_failure, boolean keep_env_on_failure, int keep_minutes){
+def runTest(String stack_type, String test_name, ArrayList<String> used_resources, Map manifest_dict, Map rackhd_cred_dict, boolean keep_docker_on_failure, boolean keep_env_on_failure, int keep_minutes){
     def share_method = new pipeline.common.ShareMethod()
     String test_target = "source_code"
     def fit_configure = new pipeline.fit.FitConfigure(stack_type, test_target, test_name)
@@ -59,6 +59,7 @@ def runTest(String stack_type, String test_name, ArrayList<String> used_resource
                         virtual_node.startFetchLogs(library_dir, target_dir)
                         // run FIT test
                         fit.configControlInterfaceIp(rackhd_dir)
+                        fit.configRackHDCredential(rackhd_dir, rackhd_cred_dict)
                         fit.run(rackhd_dir, fit_init_configure)
                         fit.run(rackhd_dir, fit_configure)
                     }

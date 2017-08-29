@@ -16,26 +16,22 @@ def configControlInterfaceIp(String rackhd_dir){
     }
 }
 
-def configRackHDCredential(Map rackhd_host_cred){
+def configRackHDCredential(String rackhd_dir, Map rackhd_host_cred){
     String rackhd_user = rackhd_host_cred["user"]
     String rackhd_pass = rackhd_host_cred["password"]
     sh """#!/bin/bash -ex
-    pushd $rackhd_dir/config
-    sed -i "s/\"username\": \"vagrant\"/\"username\": \"$rackhd_user\"/g" credentials_default.json
-    sed -i "s/\"password\": \"vagrant\"/\"password\": \"$rackhd_pass\"/g" credentials_default.json
+    pushd $rackhd_dir/test/config
+    sed -i 's/\"username\": \"vagrant\"/\"username\": \"$rackhd_user\"/g' credentials_default.json
+    sed -i 's/\"password\": \"vagrant\"/\"password\": \"$rackhd_pass\"/g' credentials_default.json
     popd
     """
 }
 
-def run(String rackhd_dir, Object fit_configure, Map rackhd_host_cred=null){
+def run(String rackhd_dir, Object fit_configure){
     String group = fit_configure.getGroup()
     String stack = fit_configure.getStack()
     String log_level = fit_configure.getLogLevel()
     String extra_options = fit_configure.getExtraOptions()
-
-    if (rackhd_host_cred != null){
-      configRackHDCredential(rackhd_host_cred)
-    }
 
     try{
         sh """#!/bin/bash -ex

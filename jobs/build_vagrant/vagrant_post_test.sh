@@ -10,10 +10,9 @@ BOX="${WORKSPACE}/rackhd-${OS_VER}-${RACKHD_VERSION}.box"
 rm $BOX -f # if previous link exists
 ln -s "$PACKERDIR/rackhd-${OS_VER}-$RACKHD_VERSION.box"  $BOX
 
-wget https://raw.githubusercontent.com/RackHD/on-build-config/master/build-release-tools/Vagrantfile.in -O Vagrantfile.in
 bash ./build-config/build-release-tools/post_test.sh \
 --type vagrant \
 --boxFile $BOX \
 --controlNetwork vmnet1 \
---vagrantfile Vagrantfile.in \
+--vagrantfile build-config/build-release-tools/Vagrantfile.in \
 --rackhdVersion $RACKHD_VERSION

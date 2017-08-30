@@ -14,7 +14,7 @@ node{
                 "CACHE_PROJECT_NAME=VAGRANT_CACHE_BUILD"
             ]){
                 def vagrant_builder = new pipeline.rackhd.vagrant.Build()
-                String rackhd_apt_repo = "${ARTIFACTORY_URL}/${STAGE_REPO_NAME} ${DEB_DISTRIBUTION} ${DEB_COMPONENT}"
+                String rackhd_apt_repo = "deb ${ARTIFACTORY_URL}/${STAGE_REPO_NAME} ${DEB_DISTRIBUTION} ${DEB_COMPONENT}"
                 vagrant_builder.buildBox(RACKHD_URL, RACKHD_COMMIT, RACKHD_VERSION, rackhd_apt_repo, OS_VER, CACHE_PROJECT_NAME)
             }
         }

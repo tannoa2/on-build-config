@@ -5,7 +5,7 @@ def buildBoxFromOVF(String target_dir, String cache_image_dir, String os_ver, St
     timeout(60){
         sh """#!/bin/bash -ex
         pushd $rackhd_dir/packer
-        ./build_box.sh --OS_VER $os_ver --RACKHD_VERSION $rackhd_version --RACKHD_APT_REPOSITORY "$rackhd_apt_repo" --CACHE_IMAGE_DIR $cache_image_dir/RackHD/packer/output-virtualbox-iso --TARGET_DIR $target_dir
+        ./build_box.sh --OS_VER $os_ver --RACKHD_VERSION $rackhd_version --DEBIAN_REPOSITORY "$rackhd_apt_repo" --CACHE_IMAGE_DIR $cache_image_dir/RackHD/packer/output-virtualbox-iso --TARGET_DIR $target_dir
         popd
         """
     }
@@ -16,7 +16,7 @@ def buildBoxFromISO(String target_dir, String os_ver, String rackhd_version, Str
     timeout(60){
         sh """#!/bin/bash -ex
         pushd $rackhd_dir/packer
-        ./build_box.sh --OS_VER $os_ver --RACKHD_VERSION $rackhd_version --RACKHD_APT_REPOSITORY "$rackhd_apt_repo" --TARGET_DIR $target_dir
+        ./build_box.sh --OS_VER $os_ver --RACKHD_VERSION $rackhd_version --DEBIAN_REPOSITORY "$rackhd_apt_repo" --TARGET_DIR $target_dir
         popd
         """
     }

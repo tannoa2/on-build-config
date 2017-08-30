@@ -1,0 +1,66 @@
+{
+    "virtual_stack":{
+        "source_code":{
+            "INIT":{
+                "GROUP":"-test deploy/rackhd_stack_init.py",
+                "STACK":"docker_local_run",
+                "LOG_LEVEL":4,
+                "EXTRA_OPTIONS":"--sm-amqp-use-user guest",
+                "LABEL":""
+            },
+            "FIT":{
+                "GROUP":"-test tests -group smoke",
+                "STACK":"docker_local_run",
+                "LOG_LEVEL":4,
+                "EXTRA_OPTIONS":"--sm-amqp-use-user guest",
+                "LABEL":"smoke_test"
+            },
+            "OS_INSTALL":{
+                "GROUP":"-test tests/bootstrap/pr_gate_os_install.py",
+                "STACK":"docker_local_run",
+                "LOG_LEVEL":4,
+                "EXTRA_OPTIONS":"--sm-amqp-use-user guest",
+                "LABEL":"os_install"
+            }
+        },
+        "ova":{
+            "INIT":{
+                "GROUP":"-test deploy/rackhd_stack_init.py",
+                "STACK":"ova",
+                "LOG_LEVEL":4,
+                "EXTRA_OPTIONS":"",
+                "LABEL":""
+            },
+            "FIT":{
+                "GROUP":"-test tests -group smoke",
+                "STACK":"ova",
+                "LOG_LEVEL":4,
+                "EXTRA_OPTIONS":"",
+                "LABEL":"smoke_test"
+            },
+            "OS_INSTALL":{
+                "GROUP":"-test tests/bootstrap/pr_gate_os_install.py",
+                "STACK":"ova",
+                "LOG_LEVEL":4,
+                "EXTRA_OPTIONS":"",
+                "LABEL":"os_install"
+            }
+        },
+        "docker":{
+            "FIT":{
+                "GROUP":"-test tests -group smoke",
+                "STACK":"docker",
+                "LOG_LEVEL":4,
+                "EXTRA_OPTIONS":"",
+                "LABEL":"smoke_test"
+            },
+            "OS_INSTALL":{
+                "GROUP":"-test tests/bootstrap/pr_gate_os_install.py",
+                "STACK":"docker",
+                "LOG_LEVEL":4,
+                "EXTRA_OPTIONS":"",
+                "LABEL":"os_install"
+            }
+        }
+    }
+}

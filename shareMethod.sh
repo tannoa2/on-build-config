@@ -9,6 +9,7 @@ execWithTimeout() {
         echo "execWithTimeout() Command not specified"
         exit 2
     fi
+    local on_build_config_dir=$(cd $(dirname "${BASH_SOURCE[0]}");pwd)
     local cmd="/bin/sh -c \"$1\""
     #timeout default to 90 seconds
     local timeout=90
@@ -22,7 +23,7 @@ execWithTimeout() {
     fi
     echo "execWithTimeout() retry count is $retry"
     echo "execWithTimeout() timeout is set to $timeout"
-    dir=${WORKSPACE}/build-config/deployment
+    dir=${on_build_config_dir}/deployment
     local time_cmd="${dir}/timeout_cmd.exp"
     if [ ! -x ${time_cmd} ]; then
         chmod a+x ${time_cmd}

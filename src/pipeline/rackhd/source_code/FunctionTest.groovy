@@ -4,17 +4,17 @@ def keepEnv(String library_dir, boolean keep_docker, boolean keep_env, int keep_
     try{
         def share_method = new pipeline.common.ShareMethod()
         String target_dir = test_target + "/" + test_name + "[$NODE_NAME]"
-        if(keep_docker) {
-            def docker_tag = JOB_NAME + "_" + test_target + "_" + test_name + ":" + BUILD_NUMBER
-            docker_tag = docker_tag.replaceAll('/', '-')
-            String docker_name = "my/test"
-            share_method.saveDockerImage(library_dir, docker_name, docker_tag, "rackhdci", target_dir)
-        }
         if(keep_env){
             def message = "Job Name: ${env.JOB_NAME} \n" + "Build Full URL: ${env.BUILD_URL} \n" + "Status: FAILURE \n" + "Stage: $test_target/$test_name \n" + "Node Name: $NODE_NAME \n" + "Reserve Duration: $keep_minutes minutes \n"
             echo "$message"
             slackSend "$message"
             sleep time: keep_minutes, unit: 'MINUTES'
+        }
+        if(keep_docker) {
+            def docker_tag = JOB_NAME + "_" + test_target + "_" + test_name + ":" + BUILD_NUMBER
+            docker_tag = docker_tag.replaceAll('/', '-')
+            String docker_name = "my/test"
+            share_method.saveDockerImage(library_dir, docker_name, docker_tag, "rackhdci", target_dir)
         }
     } catch(error){
         echo "[WARNING]: Failed to keep environment on failure with error: $error"
@@ -35,7 +35,6 @@ def runTest(String stack_type, String test_name, ArrayList<String> used_resource
             node_name = share_method.occupyAvailableLockedResource(label_name, used_resources)
             node(node_name){
                 deleteDir()
-                def err = null
                 def manifest = new pipeline.common.Manifest()
                 def fit = new pipeline.fit.FIT()
                 def virtual_node = new pipeline.nodes.VirtualNode()
@@ -63,10 +62,9 @@ def runTest(String stack_type, String test_name, ArrayList<String> used_resource
                         fit.run(rackhd_dir, fit_init_configure)
                         fit.run(rackhd_dir, fit_configure)
                     }
-                } catch(error){
-                    err = error
+                } catch(caught_error){
                     keepEnv(library_dir, keep_docker_on_failure, keep_env_on_failure, keep_minutes, test_target, test_name)
-                    error("[ERROR] Failed to run test $test_name against $test_target with error: $error")
+                    error("[ERROR] Failed to run test $test_name against $test_target with error: $caught_error")
                 } finally{
                     // archive logs
                     rackhd_deployer.archiveLogsToTarget(library_dir, target_dir)
@@ -77,10 +75,6 @@ def runTest(String stack_type, String test_name, ArrayList<String> used_resource
                     ignore_failure = true
                     rackhd_deployer.cleanUp(library_dir, ignore_failure)
                     virtual_node.cleanUp(library_dir, ignore_failure)
-                    if(err){
-                        throw err
-                    }
-
                 }
             }
         }

@@ -1,6 +1,6 @@
 package pipeline.rackhd.source_code
 
-def testWithSudo(String repo_name, String repo_dir){
+def testWithSudo(String repo_name, String work_dir){
     try{
         withCredentials([
             usernamePassword(credentialsId: 'ff7ab8d2-e678-41ef-a46b-dd0e780030e1',
@@ -8,29 +8,29 @@ def testWithSudo(String repo_name, String repo_dir){
                 usernameVariable: 'SUDO_USER')
         ]){
             sh """#!/bin/bash -e
-            trap 'echo $SUDO_PASSWORD|sudo -S find $repo_dir -group root -exec chown -R $USER:$USER {} +' SIGINT SIGTERM SIGKILL EXIT
-            pushd $repo_dir
+            trap 'echo $SUDO_PASSWORD|sudo -S find $work_dir/$repo_name -group root -exec chown -R $USER:$USER {} +' SIGINT SIGTERM SIGKILL EXIT
+            pushd $work_dir/$repo_name
             echo $SUDO_PASSWORD |sudo -S ./HWIMO-TEST
             popd
             """
         }
     } finally{
-        dir("$WORKSPACE"){
+        dir("$work_dir"){
             archiveArtifacts "$repo_name/*.xml"
             junit "$repo_name/*.xml"
         }
     }
 }
 
-def testWithoutSudo(String repo_name, String repo_dir){
+def testWithoutSudo(String repo_name, String work_dir){
     try{
         sh """#!/bin/bash -ex
-        pushd $repo_dir
+        pushd $work_dir/$repo_name
         ./HWIMO-TEST
         popd
         """
     } finally{
-        dir("$WORKSPACE"){
+        dir("$work_dir"){
             archiveArtifacts "$repo_name/*.xml"
             junit "$repo_name/*.xml"
         }
@@ -51,16 +51,18 @@ def runTest(String repo_name, Map manifest_dict, ArrayList<String> used_resource
         lock(label:label_name,quantity:1){
             node_name = share_method.occupyAvailableLockedResource(label_name, used_resources)
             node(node_name){
-                deleteDir()
-                String library_dir = "$WORKSPACE/on-build-config"
-                share_method.checkoutOnBuildConfig(library_dir)
-                String manifest_path = manifest.unstashManifest(manifest_dict, "$WORKSPACE")
-                String repo_dir = "$WORKSPACE/$repo_name"
-                manifest.checkoutTargetRepo( manifest_path, repo_name, repo_dir, library_dir)
-                if(with_sudo){
-                    testWithSudo(repo_name, repo_dir)
-                } else {
-                    testWithoutSudo(repo_name, repo_dir)
+                timeout(30){
+                    deleteDir()
+                    String library_dir = "$WORKSPACE/on-build-config"
+                    share_method.checkoutOnBuildConfig(library_dir)
+                    String manifest_path = manifest.unstashManifest(manifest_dict, "$WORKSPACE")
+                    String work_dir = "$WORKSPACE/b"
+                    manifest.checkoutAccordingToManifest(manifest_path, work_dir, library_dir)
+                    if(with_sudo){
+                        testWithSudo(repo_name, work_dir)
+                    } else {
+                        testWithoutSudo(repo_name, work_dir)
+                    }
                 }
             }
         }

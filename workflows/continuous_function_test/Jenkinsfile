@@ -1,0 +1,70 @@
+@Library('my_library') _
+node{
+    timestamps{
+        withEnv([
+            "MANIFEST_FILE_URL=${env.MANIFEST_FILE_URL}",
+            "TEST_STACK=${env.TEST_STACK}",
+            "TESTS=${env.TESTS}",
+            "KEEP_FAILURE_ENV=${env.KEEP_FAILURE_ENV}",
+            "KEEP_MINUTES=${env.KEEP_MINUTES}",
+            "KEEP_DOCKER_ON_FAILURE=${env.KEEP_DOCKER_ON_FAILURE}"
+        ]){
+            deleteDir() 
+            def manifest = new pipeline.common.Manifest()
+            def share_method = new pipeline.common.ShareMethod()
+            String manifest_path = ""
+            if("${env.MANIFEST_FILE_URL}" == "null" || "${env.MANIFEST_FILE_URL}" == ""){
+                stage("Generate Manifest"){
+                    String library_dir = "on-build-config"
+                    String work_dir = "b"
+                    share_method.checkoutOnBuildConfig(library_dir)
+                    manifest_path = manifest.generateManifestFromGithub(work_dir, library_dir)
+                }
+            } else{
+                manifest_path = manifest.downloadManifest(MANIFEST_FILE_URL, "manifest")
+            }
+            archiveArtifacts "$manifest_path"
+            def manifest_dict = manifest.stashManifest("manifest", manifest_path)
+            
+            try{
+                stage("Function Test"){
+                    def function_test = new pipeline.rackhd.source_code.FunctionTest()
+                    def function_test_branches = [:]
+                    ArrayList<String> used_resources = []
+                    List tests = Arrays.asList(TESTS.split(','))
+                    int sleep_mins = Integer.valueOf(KEEP_MINUTES)
+                    boolean keep_docker_on_failure = KEEP_DOCKER_ON_FAILURE=='true'
+                    boolean keep_failure_env = KEEP_FAILURE_ENV=='true'
+                    for(int i=0; i<tests.size(); i++){
+                        String test_name = tests[i]
+                        function_test_branches[test_name] = {
+                             withCredentials([
+                                 usernamePassword(credentialsId: 'ff7ab8d2-e678-41ef-a46b-dd0e780030e1',
+                                                  passwordVariable: 'PASSWORD',
+                                                  usernameVariable: 'USER')])
+                             {
+                                 def rackhd_cred_dict = [:]
+                                 rackhd_cred_dict["user"] = USER
+                                 rackhd_cred_dict["password"] = PASSWORD
+                                 function_test.runTest(TEST_STACK, test_name, used_resources, manifest_dict, rackhd_cred_dict, keep_docker_on_failure,keep_failure_env,sleep_mins)
+                            }
+                        }
+                    }
+                    if(tests.size()>0){
+                        parallel function_test_branches
+                    }
+                }
+                currentBuild.result = "SUCCESS"
+            } finally{
+                if ("${currentBuild.result}" != "SUCCESS"){
+                    currentBuild.result = "FAILURE"
+                }
+                stage("Publish Result"){
+                    share_method.sendResultToSlack()
+                    share_method.sendResultToMysql(true, true)            
+                }
+            }
+        }
+    }
+}
+
